@@ -17,6 +17,8 @@ import RepositoryDeepDive from "@/pages/RepositoryDeepDive";
 import AuthCallback from "@/pages/AuthCallback";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import ContactUs from "@/pages/ContactUs";
+import ReviewSession from "@/pages/ReviewSession";
+import Challenges from "@/pages/Challenges";
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard", "/auth/callback"];
 
@@ -55,6 +57,8 @@ function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/review/:sessionId" element={<ReviewSession />} />
+          <Route path="/challenges" element={<Challenges />} />
         </Routes>
       </Layout>
     </Router>
