@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ const CHALLENGE_TYPES = [
 ];
 
 const Challenges = () => {
+  const navigate = useNavigate();
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,6 +54,11 @@ const Challenges = () => {
       const response = await axiosInstance.get("/challenges");
       setChallenges(response.data.data);
     } catch (error) {
+      if (error?.response?.status === 401) {
+        toast.error("Please log in to view your challenges");
+        navigate("/login");
+        return;
+      }
       toast.error("Failed to load challenges");
       console.error(error);
     } finally {
@@ -73,6 +80,11 @@ const Challenges = () => {
       setNewChallenge({ title: "", type: "", target: "", metadata: {} });
       toast.success("Challenge created!");
     } catch (error) {
+      if (error?.response?.status === 401) {
+        toast.error("Please log in to create challenges");
+        navigate("/login");
+        return;
+      }
       toast.error("Failed to create challenge");
       console.error(error);
     }
@@ -86,6 +98,11 @@ const Challenges = () => {
       );
       toast.success("Progress updated!");
     } catch (error) {
+      if (error?.response?.status === 401) {
+        toast.error("Please log in to update progress");
+        navigate("/login");
+        return;
+      }
       toast.error("Failed to track progress");
       console.error(error);
     }
