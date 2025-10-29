@@ -18,13 +18,14 @@ export const getRepositoryInsights = asyncHandler(async (req, res) => {
 
   try {
     // Fetch repository data
-    const [repoData, languages, contributors, commits, issues, pullRequests] = await Promise.all([
+    const [repoData, languages, contributors, commits, issues, pullRequests, branches] = await Promise.all([
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}`, { headers }),
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}/languages`, { headers }),
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=10`, { headers }),
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}/commits?per_page=100`, { headers }),
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}/issues?state=all&per_page=100`, { headers }),
       axios.get(`${GITHUB_API}/repos/${owner}/${repo}/pulls?state=all&per_page=100`, { headers }),
+      axios.get(`${GITHUB_API}/repos/${owner}/${repo}/branches?per_page=100`, { headers }),
     ]);
 
     const repository = repoData.data;
@@ -67,6 +68,9 @@ export const getRepositoryInsights = asyncHandler(async (req, res) => {
     // Get commit frequency (weekly)
     const commitFrequency = getCommitFrequency(commits.data);
 
+    // Build branch graph data
+    const branchGraph = buildBranchGraph(commits.data, branches.data, repository.default_branch);
+
     return res.status(200).json(
       new ApiResponse(200, "Repository insights fetched successfully", {
         repository: {
@@ -103,6 +107,7 @@ export const getRepositoryInsights = asyncHandler(async (req, res) => {
         pullRequests: prStats,
         healthScore,
         commitFrequency,
+        branchGraph,
       })
     );
   } catch (error) {
@@ -303,4 +308,77 @@ function getCommitFrequency(commits) {
     .map(([week, count]) => ({ week, count }))
     .sort((a, b) => new Date(a.week) - new Date(b.week))
     .slice(-12); // Last 12 weeks
+}
+
+function buildBranchGraph(commits, branches, defaultBranch) {
+  try {
+    // Create a map of branch names
+    const branchNames = new Set(branches.map((b) => b.name));
+    branchNames.add(defaultBranch || "main");
+
+    // Process commits to build graph structure
+    // Note: GitHub API commits endpoint returns commits from default branch
+    // For full branch visualization, we'd need to fetch commits per branch,
+    // but for now we'll create a simplified visualization based on available data
+    const commitNodes = commits.slice(0, 50).map((commit, index) => {
+      const isMergeCommit = commit.commit.parents && commit.commit.parents.length > 1;
+      
+      return {
+        id: commit.sha.substring(0, 7),
+        sha: commit.sha,
+        message: commit.commit.message.split("\n")[0],
+        author: {
+          name: commit.commit.author.name,
+          email: commit.commit.author.email,
+          date: commit.commit.author.date,
+          avatar: commit.author?.avatar_url || null,
+        },
+        date: commit.commit.author.date,
+        isMerge: isMergeCommit,
+        parents: commit.commit.parents?.map((p) => {
+          // Handle both full SHA and object format
+          const sha = typeof p === 'string' ? p : p.sha;
+          return sha.substring(0, 7);
+        }) || [],
+        parentShas: commit.commit.parents?.map((p) => {
+          const sha = typeof p === 'string' ? p : p.sha;
+          return sha;
+        }) || [],
+        branch: defaultBranch || "main", // Default to main branch, could be enhanced later
+      };
+    });
+
+    // Reverse to show oldest first
+    commitNodes.reverse();
+
+    // Identify branch points (where commits diverge)
+    const branchPoints = [];
+    const processedCommits = new Set();
+    
+    commitNodes.forEach((commit, index) => {
+      if (commit.parents.length > 1) {
+        branchPoints.push({
+          commitId: commit.id,
+          branchFrom: commit.parents[0],
+        });
+      }
+    });
+
+    return {
+      commits: commitNodes,
+      branches: Array.from(branchNames),
+      defaultBranch: defaultBranch || "main",
+      branchPoints,
+      totalCommits: commits.length,
+    };
+  } catch (error) {
+    console.error("Error building branch graph:", error);
+    return {
+      commits: [],
+      branches: [defaultBranch || "main"],
+      defaultBranch: defaultBranch || "main",
+      branchPoints: [],
+      totalCommits: 0,
+    };
+  }
 }

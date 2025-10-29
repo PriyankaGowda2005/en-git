@@ -42,6 +42,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { validateRepoOwner, validateRepoName, parseGithubRepoUrl } from "@/lib/utils";
+import { BranchVisualization } from "@/components/BranchVisualization";
 
 const COLORS = ["#667eea", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
@@ -284,6 +285,7 @@ export default function RepositoryDeepDive() {
     pullRequests,
     healthScore,
     commitFrequency,
+    branchGraph,
   } = data;
 
   return (
@@ -736,6 +738,11 @@ export default function RepositoryDeepDive() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Branch Visualization */}
+          <div className="mt-6">
+            <BranchVisualization branchGraph={branchGraph} />
+          </div>
         </TabsContent>
 
         <TabsContent value="contributors">
