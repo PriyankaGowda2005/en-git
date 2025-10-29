@@ -18,6 +18,8 @@ import AuthCallback from "@/pages/AuthCallback";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import ContactUs from "@/pages/ContactUs";
 import Challenges from "@/pages/Challenges";
+import ReviewLanding from "@/pages/ReviewLanding";
+import ReviewSession from "@/pages/ReviewSession";
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard", "/auth/callback"];
 
@@ -57,6 +59,8 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/challenges" element={<Challenges />} />
+          <Route path="/review" element={<ReviewLanding />} />
+          <Route path="/review/:sessionId" element={<ReviewSession />} />
         </Routes>
       </Layout>
     </Router>
